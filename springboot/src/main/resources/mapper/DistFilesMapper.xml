@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.DiskFilesMapper">
+
+    <!-- 定义一个SQL片段，包含DiskFiles表的基础列名，以便在多个地方复用 -->
+    <sql id="Base_Column_List">
+        id,name,folder,file,user_id,type,size,crate_time,update_time,folder_id,root_folder_id,`delete`
+    </sql>
+
+    <!-- 查询所有DiskFiles记录，根据传入的参数进行筛选 -->
+    <select id="selectAll" resultType="com.example.entity.DiskFiles">
+        select
+        disk_files.*, user.name as userName
+        from disk_files
+        left join user
+        on disk_files.user_id = user.id
+        <where>
+            <!-- 基础筛选条件：只选择未被标记为删除的文件 -->
+            `delete` = 0
+            <!-- 如果传入的参数name不为null，则添加根据name筛选的条件 -->
+            <if test="name != null"> and disk_files.name like concat('%', #{name}, '%')</if>
+            <!-- 如果传入的参数userId不为null，则添加根据userId筛选的条件 -->
+            <if test="userId != null"> and disk_files.user_id = #{userId}</if>
+            <!-- 根据传入的参数category进行分类筛选 -->
+            <choose>
+                <!-- 如果category是'img'，则选择类型为jpg, jpeg, png, gif的文件 -->
+                <when test="category == 'img'">
+                    and (disk_files.type = 'jpg' or  disk_files.type = 'jpeg' or  disk_files.type = 'png' or  disk_files.type = 'gif')
+                </when>
+                <!-- 如果category是'video'，则选择类型为mp4的文件 -->
+                <when test="category == 'video'">
+                    and disk_files.type = 'mp4'
+                </when>
+                <!-- 如果category是'zip'，则选择类型为zip, rar, gz的文件 -->
+                <when test="category == 'zip'">
+                    and (disk_files.type = 'zip' or  disk_files.type = 'rar' or  disk_files.type = 'gz')
+                </when>
+                <!-- 如果category不是上述值，则根据folderId进行筛选 -->
+                <otherwise>
+                    <!-- 如果folderId为null，则选择folder_id为null的文件 -->
+                    <if test="folderId == null"> and disk_files.folder_id is null</if>
+                    <!-- 如果folderId不为null，则选择folder_id等于传入folderId的文件 -->
+                    <if test="folderId != null"> and disk_files.folder_id = #{folderId}</if>
+                </otherwise>
+            </choose>
+        </where>
+        <!-- 按照disk_files表的id字段降序排序查询结果 -->
+        order by disk_files.id desc
+    </select>
+
+    <!-- 定义一个名为 selectById 的 SQL 查询，用于通过 ID 查询 DiskFiles 实体 -->
+    <select id="selectById" resultType="com.example.entity.DiskFiles">
+        <!-- 查询语句开始 -->
+        select
+        <!-- 引用名为 Base_Column_List 的 SQL 片段，包含需要查询的字段列表 -->
+        <include refid="Base_Column_List" />
+        <!-- 从 disk_files 表中查询数据 -->
+        from disk_files
+        <!-- 设置查询条件，只选择 id 字段值等于传入参数 id 的记录 -->
+        where id = #{id}
+    </select>
+
+    <select id="selectByFolderId" resultType="com.example.entity.DiskFiles">
+        select
+        *
+        from disk_files
+        where `delete` = 0 and folder_id = #{folderId}
+    </select>
+
+    <select id="selectAllData" resultType="com.example.entity.DiskFiles">
+        select
+        disk_files.*, user.name as userName
+        from disk_files
+        left join user
+        on disk_files.user_id = user.id
+        <where>
+            <if test="name != null"> and disk_files.name like concat('%', #{name}, '%')</if>
+        </where>
+        order by disk_files.id desc
+    </select>
+
+    <select id="selectTrash" resultType="com.example.entity.Trash">
+        select trash.*, disk_files.type from trash
+        left join disk_files
+        on trash.file_id = disk_files.id
+        <where>
+            <if test="userId != null"> and trash.user_id = #{userId}</if>
+        </where>
+        order by trash.id desc
+    </select>
+
+    <select id="selectAllByFolderId" resultType="com.example.entity.DiskFiles">
+        select
+            *
+        from disk_files
+        where folder_id = #{folderId}
+    </select>
+
+    <delete id="deleteById">
+        delete from disk_files
+        where  id = #{id}
+    </delete>
+
+    <delete id="deleteBatch">
+        delete from disk_files where user_id = #{userId} and `delete` = 1
+    </delete>
+
+    <!-- 定义一个插入操作，id为"insert"，用于插入DiskFiles对象的记录到数据库 -->
+    <insert id="insert" parameterType="com.example.entity.DiskFiles" useGeneratedKeys="true" keyProperty="id">
+        <!-- 插入数据到disk_files表 -->
+        insert into disk_files
+        <!-- 使用trim标签构建插入字段列表，prefix为"("，suffix为")"，suffixOverrides为","，用于去除最后一个逗号 -->
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <!-- 如果id不为null，则在字段列表中添加id -->
+            <if test="id != null">id,</if>
+            <!-- 如果name不为null，则在字段列表中添加name -->
+            <if test="name != null">name,</if>
+            <!-- 如果folder不为null，则在字段列表中添加folder -->
+            <if test="folder != null">folder,</if>
+            <!-- 如果file不为null，则在字段列表中添加file -->
+            <if test="file != null">file,</if>
+            <!-- 如果userId不为null，则在字段列表中添加user_id -->
+            <if test="userId != null">user_id,</if>
+            <!-- 如果type不为null，则在字段列表中添加type -->
+            <if test="type != null">type,</if>
+            <!-- 如果size不为null，则在字段列表中添加size -->
+            <if test="size != null">size,</if>
+            <!-- 如果crateTime不为null，则在字段列表中添加crate_time -->
+            <if test="crateTime != null">crate_time,</if>
+            <!-- 如果updateTime不为null，则在字段列表中添加update_time -->
+            <if test="updateTime != null">update_time,</if>
+            <!-- 如果folderId不为null，则在字段列表中添加folder_id -->
+            <if test="folderId != null">folder_id,</if>
+            <!-- 如果rootFolderId不为null，则在字段列表中添加root_folder_id -->
+            <if test="rootFolderId != null">root_folder_id,</if>
+        </trim>
+        <!-- 使用trim标签构建插入值列表，prefix为"values ("，suffix为")"，suffixOverrides为","，用于去除最后一个逗号 -->
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <!-- 如果id不为null，则在值列表中添加#{id} -->
+            <if test="id != null">#{id},</if>
+            <!-- 如果name不为null，则在值列表中添加#{name} -->
+            <if test="name != null">#{name},</if>
+            <!-- 如果folder不为null，则在值列表中添加#{folder} -->
+            <if test="folder != null">#{folder},</if>
+            <!-- 如果file不为null，则在值列表中添加#{file} -->
+            <if test="file != null">#{file},</if>
+            <!-- 如果userId不为null，则在值列表中添加#{userId} -->
+            <if test="userId != null">#{userId},</if>
+            <!-- 如果type不为null，则在值列表中添加#{type} -->
+            <if test="type != null">#{type},</if>
+            <!-- 如果size不为null，则在值列表中添加#{size} -->
+            <if test="size != null">#{size},</if>
+            <!-- 如果crateTime不为null，则在值列表中添加#{crateTime} -->
+            <if test="crateTime != null">#{crateTime},</if>
+            <!-- 如果updateTime不为null，则在值列表中添加#{updateTime} -->
+            <if test="updateTime != null">#{updateTime},</if>
+            <!-- 如果folderId不为null，则在值列表中添加#{folderId} -->
+            <if test="folderId != null">#{folderId},</if>
+            <!-- 如果rootFolderId不为null，则在值列表中添加#{rootFolderId} -->
+            <if test="rootFolderId != null">#{rootFolderId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateById" parameterType="com.example.entity.DiskFiles">
+        <!-- 更新disk_files表中指定id的记录 -->
+        update disk_files
+        <set>
+            <!-- 使用<set>标签包裹所有要更新的字段，以便自动处理字段间的逗号分隔 -->
+            <if test="name != null">
+                <!-- 如果name字段有值，则更新name字段 -->
+                name = #{name},
+            </if>
+            <if test="folder != null">
+                <!-- 如果folder字段有值，则更新folder字段 -->
+                folder = #{folder},
+            </if>
+            <if test="file != null">
+                <!-- 如果file字段有值，则更新file字段 -->
+                file = #{file},
+            </if>
+            <if test="userId != null">
+                <!-- 如果userId字段有值，则更新user_id字段 -->
+                user_id = #{userId},
+            </if>
+            <if test="type != null">
+                <!-- 如果type字段有值，则更新type字段 -->
+                type = #{type},
+            </if>
+            <if test="size != null">
+                <!-- 如果size字段有值，则更新size字段 -->
+                size = #{size},
+            </if>
+            <if test="crateTime != null">
+                <!-- 如果crateTime字段有值，则更新crate_time字段 -->
+                crate_time = #{crateTime},
+            </if>
+            <if test="updateTime != null">
+                <!-- 如果updateTime字段有值，则更新update_time字段 -->
+                update_time = #{updateTime},
+            </if>
+            <if test="folderId != null">
+                <!-- 如果folderId字段有值，则更新folder_id字段 -->
+                folder_id = #{folderId},
+            </if>
+            <if test="rootFolderId != null">
+                <!-- 如果rootFolderId字段有值，则更新root_folder_id字段 -->
+                root_folder_id = #{rootFolderId},
+            </if>
+            <if test="delete != null">
+                <!-- 如果delete字段有值，则更新`delete`字段（注意：因为delete是MySQL的保留字，所以使用反引号`来避免解析错误） -->
+                `delete` = #{delete},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+</mapper>

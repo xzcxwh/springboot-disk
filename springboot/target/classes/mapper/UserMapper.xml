@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 定义一个mapper，它的命名空间是 com.example.mapper.UserMapper -->
+<mapper namespace="com.example.mapper.UserMapper">
+
+    <!-- 定义一个可以被复用的SQL片段，包含User表的列名 -->
+    <sql id="Base_Column_List">
+        id,username,password,name,phone,email,avatar,role
+    </sql>
+
+    <!-- 查询所有用户，可以根据不同的条件筛选 -->
+    <select id="selectAll" resultType="com.example.entity.User">
+        select
+        <!-- 引用上面定义的SQL片段 -->
+        <include refid="Base_Column_List" />
+        from user
+        <!-- 动态SQL，根据条件是否满足来拼接SQL语句 -->
+        <where>
+            <if test="id != null"> and id= #{id}</if>
+            <if test="username != null"> and username like concat('%', #{username}, '%')</if>
+            <if test="password != null"> and password= #{password}</if>
+            <if test="name != null"> and name= #{name}</if>
+            <if test="phone != null"> and phone= #{phone}</if>
+            <if test="email != null"> and email= #{email}</if>
+            <if test="avatar != null"> and avatar= #{avatar}</if>
+            <if test="role != null"> and role= #{role}</if>
+        </where>
+    </select>
+
+    <!-- 根据ID查询用户 -->
+    <select id="selectById" resultType="com.example.entity.User">
+        select
+        <!-- 引用上面定义的SQL片段 -->
+        <include refid="Base_Column_List" />
+        from user
+        where id = #{id}
+    </select>
+
+    <!-- 根据ID删除用户 -->
+    <delete id="deleteById">
+        delete from user
+        where  id = #{id}
+    </delete>
+
+    <!-- 插入新用户 -->
+    <insert id="insert" parameterType="com.example.entity.User" useGeneratedKeys="true">
+        insert into user
+        <!-- 动态SQL，只有非null的字段才会被插入 -->
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="username != null">username,</if>
+            <if test="password != null">password,</if>
+            <if test="name != null">name,</if>
+            <if test="phone != null">phone,</if>
+            <if test="email != null">email,</if>
+            <if test="avatar != null">avatar,</if>
+            <if test="role != null">role,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="username != null">#{username},</if>
+            <if test="password != null">#{password},</if>
+            <if test="name != null">#{name},</if>
+            <if test="phone != null">#{phone},</if>
+            <if test="email != null">#{email},</if>
+            <if test="avatar != null">#{avatar},</if>
+            <if test="role != null">#{role},</if>
+        </trim>
+    </insert>
+
+    <!-- 根据ID更新用户信息 -->
+    <update id="updateById" parameterType="com.example.entity.User">
+        update user
+        <set>
+            <!-- 动态SQL，只有非null的字段才会被更新 -->
+            <if test="username != null">
+                username = #{username},
+            </if>
+            <if test="password != null">
+                password = #{password},
+            </if>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="phone != null">
+                phone = #{phone},
+            </if>
+            <if test="email != null">
+                email = #{email},
+            </if>
+            <if test="avatar != null">
+                avatar = #{avatar},
+            </if>
+            <if test="role != null">
+                role = #{role},
+            </if>
+        </set>
+        where id = #{id} 
+    </update>
+
+</mapper>

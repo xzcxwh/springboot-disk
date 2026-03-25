@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 声明Mapper映射文件，定义了TrashMapper的SQL操作 -->
+<mapper namespace="com.example.mapper.TrashMapper">
+
+    <!-- 定义Base_Column_List，用于复用垃圾信息表的列名 -->
+    <sql id="Base_Column_List">
+        id,file_id,name,size,time,user_id
+    </sql>
+
+    <!-- 查询所有垃圾信息，并关联用户表获取用户名 -->
+    <select id="selectAll" resultType="com.example.entity.Trash">
+        select
+        trash.*, user.name as userName
+        from trash
+        left join user
+        on trash.user_id = user.id
+        <!-- 根据name字段进行模糊查询，如果name不为空 -->
+        <where>
+            <if test="name != null"> and trash.name like concat('%', #{name}, '%')</if>
+        </where>
+        order by trash.id desc
+    </select>
+
+    <!-- 根据ID查询垃圾信息 -->
+    <select id="selectById" resultType="com.example.entity.Trash">
+        select
+        <include refid="Base_Column_List" />
+        from trash
+        where id = #{id}
+    </select>
+
+    <!-- 根据ID删除垃圾信息 -->
+    <delete id="deleteById">
+        delete from trash
+        where  id = #{id}
+    </delete>
+
+    <!-- 根据文件ID删除垃圾信息 -->
+    <delete id="deleteByFileId">
+        delete from trash
+        where  file_id = #{fileId}
+    </delete>
+
+    <!-- 插入垃圾信息，如果ID自增，则使用数据库生成的ID -->
+    <insert id="insert" parameterType="com.example.entity.Trash" useGeneratedKeys="true" keyProperty="id">
+        insert into trash
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <!-- 插入字段：ID，如果传入的参数id不为空 -->
+            <if test="id != null">id,</if>
+            <!-- 插入字段：文件ID，如果传入的参数fileId不为空 -->
+            <if test="fileId != null">file_id,</if>
+            <!-- 插入字段：名称，如果传入的参数name不为空 -->
+            <if test="name != null">name,</if>
+            <!-- 插入字段：大小，如果传入的参数size不为空 -->
+            <if test="size != null">size,</if>
+            <!-- 插入字段：时间，如果传入的参数time不为空 -->
+            <if test="time != null">time,</if>
+            <!-- 插入字段：用户ID，如果传入的参数userId不为空 -->
+            <if test="userId != null">user_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <!-- 插入值：ID，如果传入的参数id不为空 -->
+            <if test="id != null">#{id},</if>
+            <!-- 插入值：文件ID，如果传入的参数fileId不为空 -->
+            <if test="fileId != null">#{fileId},</if>
+            <!-- 插入值：名称，如果传入的参数name不为空 -->
+            <if test="name != null">#{name},</if>
+            <!-- 插入值：大小，如果传入的参数size不为空 -->
+            <if test="size != null">#{size},</if>
+            <!-- 插入值：时间，如果传入的参数time不为空 -->
+            <if test="time != null">#{time},</if>
+            <!-- 插入值：用户ID，如果传入的参数userId不为空 -->
+            <if test="userId != null">#{userId},</if>
+        </trim>
+    </insert>
+
+    <!-- 根据ID更新垃圾信息 -->
+    <update id="updateById" parameterType="com.example.entity.Trash">
+        update trash
+        <set>
+            <!-- 更新字段：文件ID，如果传入的参数fileId不为空 -->
+            <if test="fileId != null">
+                file_id = #{fileId},
+            </if>
+            <!-- 更新字段：名称，如果传入的参数name不为空 -->
+            <if test="name != null">
+                name = #{name},
+                <!-- 结束之前的条件判断 -->
+            </if>
+
+            <!-- 判断size是否不为空 -->
+            <if test="size != null">
+                <!-- 如果size不为空，则在SQL语句中添加size字段的赋值操作 -->
+                size = #{size},
+            </if>
+
+            <!-- 判断time是否不为空 -->
+            <if test="time != null">
+                <!-- 如果time不为空，则在SQL语句中添加time字段的赋值操作 -->
+                time = #{time},
+            </if>
+
+            <!-- 判断userId是否不为空 -->
+            <if test="userId != null">
+                <!-- 如果userId不为空，则在SQL语句中添加user_id字段的赋值操作 -->
+                user_id = #{userId},
+            </if>
+
+        </set>
+        where id = #{id}
+    </update>
+
+</mapper>
